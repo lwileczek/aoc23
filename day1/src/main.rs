@@ -28,13 +28,14 @@ fn read_file(file_name: &str) -> Result<Vec<Vec<u8>>, std::io::Error> {
     let mut lines = reader.lines();
     let mut v: Vec<Vec<u8>> = Vec::new();
     while let Some(Ok(line)) = lines.next() {
-        v.push(line.into_bytes());
+        let line_all_nums = replace_str_num(line);
+        v.push(line_all_nums.into_bytes());
     }
 
     Ok(v)
 }
 
-pub fn get_calibration(data: &[u8]) -> u8 {
+fn get_calibration(data: &[u8]) -> u8 {
     let condition = |b| (b >= b'0') && (b <= b'9');
 
     let f = match data.iter().find(|&byte| condition(*byte)) {
@@ -60,24 +61,36 @@ pub fn get_calibration(data: &[u8]) -> u8 {
     number
 }
 
+fn replace_str_num(s: String) -> String {
+    let mut line: String = s;
+    let words = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+    let nums = ["o1e", "t2o", "t3e", "f4r", "f5e", "s6x", "s7n", "e8t", "n9e"];
+    for (w, n) in words.iter().zip(nums.iter()) {
+        line = line.replace(w, n);
+    }
+
+    return line;
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_ex0() {
+    fn test_first_spot() {
         let o = get_calibration("1abc2".as_bytes());
         assert_eq!(o, 12);
     }
 
     #[test]
-    fn test_ex1() {
+    fn test_simple_search() {
         let o = get_calibration("pqr3stu8vwx".as_bytes());
         assert_eq!(o, 38);
     }
 
     #[test]
-    fn test_ex2() {
+    fn test_multi_numbers() {
         let o = get_calibration("a1b2c3d4e5f".as_bytes());
         assert_eq!(o, 15);
     }
@@ -92,6 +105,55 @@ mod tests {
     fn test_no_digits() {
         let o = get_calibration("trebuchet".as_bytes());
         assert_eq!(o, 0);
+    }
+
+    #[test]
+    fn test_outside_str() {
+        let s = replace_str_num("two1nine".to_string());
+        let o = get_calibration(s.as_bytes());
+        assert_eq!(o, 29);
+    }
+
+    #[test]
+    fn test_all_str_num() {
+        let s = replace_str_num("eightwothree".to_string());
+        let o = get_calibration(s.as_bytes());
+        assert_eq!(o, 83);
+    }
+
+    #[test]
+    fn test_str_num_and_rnd() {
+        let s = replace_str_num("abcone2threexyz".to_string());
+        let o = get_calibration(s.as_bytes());
+        assert_eq!(o, 13);
+    }
+
+    #[test]
+    fn test_overlapping_num_strs() {
+        let s = replace_str_num("xtwone3four".to_string());
+        let o = get_calibration(s.as_bytes());
+        assert_eq!(o, 24);
+    }
+
+    #[test]
+    fn test_num_before_str() {
+        let s = replace_str_num("4nineeightseven2".to_string());
+        let o = get_calibration(s.as_bytes());
+        assert_eq!(o, 42);
+    }
+
+    #[test]
+    fn test_one_num_one_sr() {
+        let s = replace_str_num("zoneight234".to_string());
+        let o = get_calibration(s.as_bytes());
+        assert_eq!(o, 14);
+    }
+
+    #[test]
+    fn test_not_all_num_count() {
+        let s = replace_str_num("7pqrstsixteen".to_string());
+        let o = get_calibration(s.as_bytes());
+        assert_eq!(o, 76);
     }
 
     #[test]
