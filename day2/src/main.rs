@@ -2,6 +2,13 @@ use std::str;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
+struct BagGame {
+    game: u8,
+    red: u8,
+    green: u8,
+    blue: u8,
+}
+
 fn main() {
     let f = match read_file("data.txt") {
         Ok(v) => v,
@@ -15,15 +22,11 @@ fn main() {
         blue: 14,
     };
 
-    let t = tally_games(f, rules);
-    println!("ans: {}", t);
-}
-
-struct BagGame {
-    game: u8,
-    red: u8,
-    green: u8,
-    blue: u8,
+    println!("Answers:");
+    let t = tally_games(&f, rules);
+    println!("Part 1: {}", t);
+    let p = tally_game_power(f);
+    println!("Part 2: {}", p);
 }
 
 fn read_file(file_name: &str) -> Result<Vec<String>, std::io::Error> {
@@ -39,7 +42,7 @@ fn read_file(file_name: &str) -> Result<Vec<String>, std::io::Error> {
     Ok(v)
 }
 
-fn tally_games(games: Vec<String>, rules: BagGame) -> u64 {
+fn tally_games(games: &Vec<String>, rules: BagGame) -> u64 {
     let mut tally: u64 = 0;
     for game in games.iter() {
         let g = parse_line(game);
@@ -116,6 +119,19 @@ fn parse_line(s: &str) -> BagGame {
     result
 }
 
+fn tally_game_power(games: Vec<String>) -> u64 {
+    let mut tally: u64 = 0;
+    for game in games.iter() {
+        let mut power: u64 = 1;
+        let g = parse_line(game);
+        power = power * g.red as u64;
+        power = power * g.blue as u64;
+        power = power * g.green as u64;
+        tally = tally + power;
+    }
+    tally
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,8 +178,21 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"#;
         };
         let v: Vec<&str> = input.lines().collect();
         let vs = convert_vec_str_to_vec_string(v);
-        let t = tally_games(vs, rules);
+        let t = tally_games(&vs, rules);
         assert_eq!(t, 8);
+    }
+
+    #[test]
+    fn test_game_power() {
+        let input = r#"Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"#;
+        let v: Vec<&str> = input.lines().collect();
+        let vs = convert_vec_str_to_vec_string(v);
+        let t = tally_game_power(vs);
+        assert_eq!(t, 2286);
     }
     
     fn convert_vec_str_to_vec_string(vec_str: Vec<&str>) -> Vec<String> {
@@ -175,5 +204,6 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"#;
         }
         vec_string
     }
+
 }
 
