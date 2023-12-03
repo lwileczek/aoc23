@@ -11,7 +11,6 @@ struct PartNum {
 }
 
     
-#[allow(dead_code)]
 struct SpecialChar {
     line: usize,
     pos: usize,
@@ -23,9 +22,36 @@ fn main() -> Result<(), std::io::Error>{
     let (nums, symbols) = tokenize(data);
     let ans1 = get_part_count(&nums, &symbols);
     println!("Part 1 answer: {}", ans1);
+    let ans2 = get_gear_ratio(&nums, &symbols);
+    println!("Part 2 answer: {}", ans2);
 
     Ok(())
 }
+
+fn get_gear_ratio(nums: &Vec<PartNum>, symbols: &Vec<SpecialChar>) -> usize {
+    let mut ans: usize = 0;
+    for s in  symbols.iter() {
+        if s.val != "*" {
+            continue;
+        }
+        let parts = nums.iter().filter(|n| match_gear_nums(n, s)).collect::<Vec<_>>();
+        if parts.len() == 2 {
+            ans = ans + parts.iter().fold(1, |acc, p| acc*p.nval);
+        }
+    }
+    ans
+}
+
+fn match_gear_nums(p: &PartNum, s: &SpecialChar) -> bool {
+    if p.line < max(s.line, 1) - 1 || p.line > (s.line + 1) {
+        return false;
+    }
+    if (p.pos + p.val.len()-1) < max(s.pos, 1) - 1 || p.pos > (s.pos + 1) {
+        return false;
+    }
+    true
+}
+
 
 fn get_part_count(nums: &Vec<PartNum>, symbols: &Vec<SpecialChar>) -> usize {
     let part_nums = nums.iter().filter(|n| check_if_part_num(n, &symbols)).collect::<Vec<_>>();
@@ -164,6 +190,24 @@ mod test {
         let (n, s) = tokenize(input);
         let ans = get_part_count(&n, &s);
         assert_eq!(ans, 4361);
+    }
+
+    #[test]
+    fn test_part_two() {
+        let s: Vec<&str> = r#"467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598.."#.lines().collect();
+        let input = convert_vec_str_to_vec_string(s);
+        let (n, s) = tokenize(input);
+        let ans = get_gear_ratio(&n, &s);
+        assert_eq!(ans, 467835);
     }
 
     fn convert_vec_str_to_vec_string(vec_str: Vec<&str>) -> Vec<String> {
