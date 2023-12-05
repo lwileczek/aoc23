@@ -13,3 +13,4 @@ I'll have to see how others did it to make the part 2 fast.
 Alright, so the key is to realize that the scores are just rolling upward so you can just pass the values
 to the next loop/spot in the array.
 No recurssion is required as since we can just put everything in a simple array.
+Most importantly, with this method, we don't parse a line more than once.
