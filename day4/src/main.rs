@@ -5,10 +5,14 @@ use std::io::{BufRead, BufReader};
 fn main() -> Result<(), std::io::Error>{
     let data = read_file("data.txt")?;
     let result = data.iter().fold(0, |acc, game| acc + score_game(&game));
-    print!("Part 1: {}\n", result);
+    println!("Part 1: {}", result);
 
-    let ans2 = count_tickets(&data);
-    print!("Part 2: {}\n", ans2);
+    let ans2 = part2_improved(&data);
+    println!("Part 2: {}", ans2);
+
+    //println!("starting slow part 2");
+    //let ans2_slow = count_tickets(&data);
+    //println!("Part 2: {}", ans2_slow);
 
     Ok(())
 }
@@ -26,16 +30,21 @@ fn read_file(file_name: &str) -> Result<Vec<String>, std::io::Error> {
     Ok(v)
 }
 
-fn count_tickets(data: &Vec<String>) -> u32 {
-    let mut count: u32 = data.len() as u32;
-    for i in 0..data.len() {
-        count = count + score_game_part2(data, i);
+fn part2_improved(dataset: &Vec<String>) -> u32 {
+    let mut scores: Vec<u32> = vec![1; dataset.len()];
+    for (i, s) in dataset.iter().enumerate() {
+        let v = count_winning(s);
+        if v > 0 {
+            for k in 1..=v as usize {
+                scores[i+k] = scores[i+k] + scores[i];
+            }
+        }
     }
-    count
+    let ans = scores.iter().fold(0, |acc, x| acc + x);
+    ans
 }
 
-fn score_game_part2(dataset: &Vec<String>, idx: usize) -> u32 {
-    let input = &dataset[idx];
+fn count_winning(input: &String) -> u32 {
     let mut score = 0;
     let mut pos = 0;
     let mut winning_numbers: Vec<&str> = Vec::new();
@@ -54,7 +63,6 @@ fn score_game_part2(dataset: &Vec<String>, idx: usize) -> u32 {
         }
         let n: &str = &input[pos..(pos+2)];
         winning_numbers.push(n);
-        //ASSUMPTION: no winning number is above 99
         pos = pos + 3;
     }
 
@@ -68,11 +76,6 @@ fn score_game_part2(dataset: &Vec<String>, idx: usize) -> u32 {
         }
         
         pos = pos + 3;
-    }
-    if score > 0 {
-        for k in 1..=score as usize {
-            score = score + score_game_part2(dataset, idx + k);
-        }
     }
     score
 }
@@ -118,6 +121,60 @@ fn score_game(input: &String) -> u32 {
     score
 }
 
+#[allow(dead_code)]
+fn count_tickets(data: &Vec<String>) -> u32 {
+    let mut count: u32 = data.len() as u32;
+    for i in 0..data.len() {
+        count = count + score_game_part2(data, i);
+    }
+    count
+}
+
+
+#[allow(dead_code)]
+fn score_game_part2(dataset: &Vec<String>, idx: usize) -> u32 {
+    let input = &dataset[idx];
+    let mut score = 0;
+    let mut pos = 0;
+    let mut winning_numbers: Vec<&str> = Vec::new();
+    for (i, c) in input.chars().enumerate() {
+        if c == ':' {
+            //ASSUMPTION: always a space after the semi-colon,
+            pos = i + 2;
+            break;
+        }
+    }
+    let charz: Vec<char> = input.chars().collect();
+    while pos < input.len() {
+        if charz[pos] == '|' {
+            pos = pos + 2;
+            break;
+        }
+        let n: &str = &input[pos..(pos+2)];
+        winning_numbers.push(n);
+        //ASSUMPTION: no winning number is above 99
+        pos = pos + 3;
+    }
+
+    while pos < input.len() {
+        let n: &str = &input[pos..(pos+2)];
+        for val in winning_numbers.iter() {
+            if **val == *n {
+                score = score + 1;
+                break;
+            }
+        }
+        
+        pos = pos + 3;
+    }
+    if score > 0 {
+        for k in 1..=score as usize {
+            score = score + score_game_part2(dataset, idx + k);
+        }
+    }
+    score
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -158,6 +215,19 @@ Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"#.lines().collect();
         let data = convert_vec_str_to_vec_string(input);
         let ans = count_tickets(&data);
+        assert_eq!(ans, 30);
+    }
+
+    #[test]
+    fn test_improved_counting() {
+        let input = r#"Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
+Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
+Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1
+Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
+Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
+Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"#.lines().collect();
+        let data = convert_vec_str_to_vec_string(input);
+        let ans = part2_improved(&data);
         assert_eq!(ans, 30);
     }
 
