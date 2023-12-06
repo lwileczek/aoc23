@@ -14,8 +14,6 @@ fn main() -> Result<(), std::io::Error>{
     Ok(())
 }
 
-//There is a trick where you only have to do halve the calculations because
-//of the symetric and parabolic nature of this problem, will try after first solution
 fn p1 (data: &Vec<String>) -> u32 {
     let times = parse_nums(&data[0]);
     let distances = parse_nums(&data[1]);
@@ -32,15 +30,18 @@ fn p1 (data: &Vec<String>) -> u32 {
 }
 
 fn count_wins(t: &u16, d: &u16) -> u16 {
-    let mut tally = 0;
-    for k in 1..*t {
-        let run = project_distance(k, &t);
-        if run > *d {
-            tally = tally + 1;
+    let mut eclipse = 0; 
+    let half = t / 2;
+    for k in 1..half {
+        if project_distance(k, &t) > *d {
+            eclipse = k;
+            break;
         }
     }
-
-    tally
+    if t % 2 == 0 {
+        return (half-eclipse)*2 + 1;
+    }
+    (half-eclipse + 1)*2
 }
 
 fn project_distance(t: u16, total: &u16) -> u16 {
