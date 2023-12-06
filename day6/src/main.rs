@@ -24,7 +24,7 @@ fn p1 (data: &Vec<String>) -> u64 {
     let mut ans: u64 = 1;
     for (t, d) in times.iter().zip(distances.iter()) {
         let wins = count_wins(t, d);
-        ans = ans * wins as u64;
+        ans = ans * wins;
     }
     ans
 }
@@ -35,6 +35,8 @@ fn p2 (data: &Vec<String>) -> u64 {
     count_wins(&t, &d)
 }
 
+//here the problem says the kerning is off and the line is supposed to be one big number
+//so we find all the digits and combine them.
 fn parse_big_num(s: &String) -> u64 {
     let mut charz: Vec<char> = Vec::new();
     for c in s.chars() {
@@ -51,6 +53,8 @@ fn parse_big_num(s: &String) -> u64 {
     num
 }
 
+//find the first place where we win the game, and use the fact that the results
+//are symmetric to count the total number of ways we can win
 fn count_wins(t: &u64, d: &u64) -> u64 {
     let mut eclipse = 0; 
     let half = t / 2;
@@ -66,6 +70,8 @@ fn count_wins(t: &u64, d: &u64) -> u64 {
     (half-eclipse + 1)*2
 }
 
+//No required at all, pretending the inputs can be funky and trying to write
+//something cleaner with a simple check.
 fn project_distance(t: u64, total: &u64) -> u64 {
     if *total <= t {
         return 0;
@@ -73,6 +79,9 @@ fn project_distance(t: u64, total: &u64) -> u64 {
     t * (total - t)
 }
 
+//read through the line character by character grabbing the multi-digit numbers
+//this is pretty much how I've been parsing numbers out each day.
+//I'm not sure what the best practice is
 fn parse_nums(line: &String) -> Vec<u64>{
     let charz: Vec<char> = line.chars().collect();
     let mut ans: Vec<u64> = Vec::new();
