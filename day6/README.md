@@ -1,10 +1,10 @@
 # Day 6
-This is a pretty easy problem.
-You can make it slightly faster by recognizing the symmetry and you only need to compute
-until you find the first time that wins.
-Overall, much easier than day5p2.
+This is a line intercepting a Parabola so you can use the quadratic equation to find the roots and then cound the distance between. 
 
-### Notes
-You can save memory on p1 if you know the numbers will continue to be small.
-You can sometimes see a speed-up of your program if you can use less memory
-but these are so small it doens't matter.
+## Niave
+brute force it
+## Slight better
+if you didn't see you could use the quadratic equation you can compute until you find the first time that wins,
+then realize that it's symetic, and compute the distance to the center and double it. 
+## Best
+Quadratic equation
