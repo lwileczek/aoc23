@@ -1,48 +1,95 @@
 use std::str;
+use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone)]
 enum HandType {
-    Five,
-    Four,
-    Full,
-    Three,
-    Two,
+    High,
     One,
-    High
+    Two,
+    Three,
+    Full,
+    Four,
+    Five,
 }
 
+#[derive(Debug,Eq, Ord, PartialOrd, PartialEq)]
 struct Hand {
     //rank it in poker
     htype: HandType,
-    //the bid value
-    bid: u16,
     //the actual hand for reference
     hand: String,
+    //the bid value
+    bid: u16,
 }
 
 fn main() -> Result<(), std::io::Error>{
-    let data = read_file("_data.txt")?;
+    let data = read_file("data.txt")?;
 
     let ans1 = p1(&data);
     println!("Part 1: {}", ans1);
 
-    let ans2 = p2(&data);
-    println!("Part 2: {}", ans2);
+    //let ans2 = p2(&data);
+    //println!("Part 2: {}", ans2);
 
     Ok(())
 }
 
-fn p1 (data: &Vec<String>) -> u64 {
+fn p1 (data: &Vec<String>) -> usize {
     //TODO: .sort().fold()
-    let hands: Vec<Hand> =  data.iter().map(parse_hand).collect();
-    todo!()
+    let mut hands: Vec<Hand> =  data.iter().map(parse_hand).collect();
+    //hands.sort_unstable_by_key(|item| (item.htype, item.hand.clone()));
+    sort(&mut hands);
+    hands.iter().enumerate().fold(0, |acc, (idx, h)| acc + (idx+1)*h.bid as usize)
+}
+
+fn sort(items: &mut [Hand]) {
+    items.sort_unstable_by(|a, b| {
+        match a.htype.cmp(&b.htype) {
+            //Ordering::Equal => { a.column.cmp(&b.column) }
+            Ordering::Equal => {
+                let mut o: Ordering = Ordering::Equal;
+                for (ca, cb) in a.hand.chars().zip(b.hand.chars()) {
+                    if ca == cb {
+                        continue
+                    }
+                    let va = value_card(ca);
+                    let vb = value_card(cb);
+                    o = va.cmp(&vb);
+                    break
+                }
+                o
+            }
+            v => { v }
+        }
+    });
+}
+
+fn value_card(c: char) -> u8 {
+        match c {
+            'A' => 12,
+            'K' => 11,
+            'Q' => 10,
+            'J' => 9,
+            'T' => 8,
+            '9' => 7,
+            '8' => 6,
+            '7' => 5,
+            '6' => 4,
+            '5' => 3,
+            '4' => 2,
+            '3' => 1,
+            '2' => 0,
+            _ => panic!("UNKNOWN CARD!")
+        }
 }
 
 fn p2 (data: &Vec<String>) -> u64 {
     todo!()
 }
+
+//fn sort_hands(h0: Hand, h1: Hand)
 
 fn parse_hand(line: &String) -> Hand {
     let space = match line.chars().position(|c| c == ' ') {
@@ -188,6 +235,29 @@ mod test {
             assert_eq!(h.htype, hand.h.htype);
             assert_eq!(h.bid, hand.h.bid);
             assert_eq!(h.hand, hand.h.hand);
+        }
+    }
+
+    #[test]
+    fn test_sorting_hand() {
+        let mut hands = vec![
+            Hand{htype: HandType::Three, bid: 220, hand: "T55J5".to_string()},
+            Hand{htype: HandType::Two, bid: 684, hand: "KK677".to_string()},
+            Hand{htype: HandType::One, bid: 765, hand: "32T3K".to_string()},
+            Hand{htype: HandType::Two, bid: 28, hand: "KTJJT".to_string()},
+            Hand{htype: HandType::Three, bid: 483, hand: "QQQJA".to_string()},
+        ];
+        let solution = vec![
+            "32T3K".to_string(),
+            "KTJJT".to_string(),
+            "KK677".to_string(),
+            "T55J5".to_string(),
+            "QQQJA".to_string(),
+        ];
+
+        sort(&mut hands);
+        for (h, s) in hands.iter().zip(solution.iter()) {
+            assert_eq!(h.hand, *s);
         }
     }
 
