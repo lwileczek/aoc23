@@ -27,27 +27,15 @@ struct Hand {
 fn main() -> Result<(), std::io::Error>{
     let data = read_file("data.txt")?;
 
-    let ans1 = p1(&data);
-    println!("Part 1: {}", ans1);
-
-    //let ans2 = p2(&data);
-    //println!("Part 2: {}", ans2);
+    let ans2 = p2(&data);
+    println!("Part 2: {}", ans2);
 
     Ok(())
-}
-
-fn p1 (data: &Vec<String>) -> usize {
-    //TODO: .sort().fold()
-    let mut hands: Vec<Hand> =  data.iter().map(parse_hand).collect();
-    //hands.sort_unstable_by_key(|item| (item.htype, item.hand.clone()));
-    sort(&mut hands);
-    hands.iter().enumerate().fold(0, |acc, (idx, h)| acc + (idx+1)*h.bid as usize)
 }
 
 fn sort(items: &mut [Hand]) {
     items.sort_unstable_by(|a, b| {
         match a.htype.cmp(&b.htype) {
-            //Ordering::Equal => { a.column.cmp(&b.column) }
             Ordering::Equal => {
                 let mut o: Ordering = Ordering::Equal;
                 for (ca, cb) in a.hand.chars().zip(b.hand.chars()) {
@@ -71,22 +59,25 @@ fn value_card(c: char) -> u8 {
             'A' => 12,
             'K' => 11,
             'Q' => 10,
-            'J' => 9,
-            'T' => 8,
-            '9' => 7,
-            '8' => 6,
-            '7' => 5,
-            '6' => 4,
-            '5' => 3,
-            '4' => 2,
-            '3' => 1,
-            '2' => 0,
+            'J' => 0,
+            'T' => 9,
+            '9' => 8,
+            '8' => 7,
+            '7' => 6,
+            '6' => 5,
+            '5' => 4,
+            '4' => 3,
+            '3' => 2,
+            '2' => 1,
             _ => panic!("UNKNOWN CARD!")
         }
 }
 
-fn p2 (data: &Vec<String>) -> u64 {
-    todo!()
+fn p2 (data: &Vec<String>) -> usize {
+    let mut hands: Vec<Hand> =  data.iter().map(parse_hand).collect();
+    //hands.sort_unstable_by_key(|item| (item.htype, item.hand.clone()));
+    sort(&mut hands);
+    hands.iter().enumerate().fold(0, |acc, (idx, h)| acc + (idx+1)*h.bid as usize)
 }
 
 //fn sort_hands(h0: Hand, h1: Hand)
@@ -129,6 +120,22 @@ fn categorize_hand(h: &String) -> HandType {
             _ => panic!("UNKNOWN CARD!")
         }
     }
+
+    let mode = cards.iter()
+        .enumerate()
+        .filter(|&(i, _)| i != 9) //don't let the max be jokers
+        .max_by_key(|&(_, value)| value) // by key so we can pass the index along
+        .map(|(i, _)| i); // only return the index of the value
+
+    match mode {
+        Some(v) => {
+            cards[v] = cards[v] + cards[9];
+            cards[9] = 0;
+            ()
+        },
+        None => ()
+    };
+
     let result = cards.iter()
         .filter(|x| **x != 0)
         .fold(1, |acc, x| acc*x);
@@ -148,30 +155,6 @@ fn categorize_hand(h: &String) -> HandType {
         1 => HandType::High,
         _ => panic!("unexpected hand count!")
     }
-}
-
-fn parse_nums(line: &String) -> Vec<u64>{
-    let charz: Vec<char> = line.chars().collect();
-    let mut ans: Vec<u64> = Vec::new();
-    let mut pos = 0;
-    while pos < line.len() {
-        if charz[pos].is_digit(10) {
-            let mut end = pos + 1;
-            while end < line.len() && line.chars().nth(end).unwrap().is_digit(10) {
-                end += 1;
-            }
-            let n = match line[pos..end].parse::<u64>() {
-                Ok(v) => v,
-                Err(e) => panic!("unable to parse u64 from string! {}", e)
-            };
-
-            ans.push(n);
-            pos = end;
-            continue
-        }
-        pos = pos + 1
-    }
-    ans
 }
 
 fn read_file(file_name: &str) -> Result<Vec<String>, std::io::Error> {
@@ -203,20 +186,38 @@ mod test {
     #[test]
     fn test_categorizing_hands() {
         let hands = vec![
+            //given input
             HandResult{h: "32T3K".to_string(), t: HandType::One},
             HandResult{h: "KK677".to_string(), t: HandType::Two},
-            HandResult{h: "KTJJT".to_string(), t: HandType::Two},
-            HandResult{h: "T55J5".to_string(), t: HandType::Three},
-            HandResult{h: "QQQJA".to_string(), t: HandType::Three},
-            HandResult{h: "QQQJQ".to_string(), t: HandType::Four},
-            HandResult{h: "QQQQQ".to_string(), t: HandType::Five},
-            HandResult{h: "QJQJQ".to_string(), t: HandType::Full},
+            HandResult{h: "KTJJT".to_string(), t: HandType::Four},
+            HandResult{h: "T55J5".to_string(), t: HandType::Four},
+            HandResult{h: "QQQJA".to_string(), t: HandType::Four},
+            //High
             HandResult{h: "32T4K".to_string(), t: HandType::High},
+            //one
+            HandResult{h: "723JA".to_string(), t: HandType::One},
+            //three
+            HandResult{h: "32338".to_string(), t: HandType::Three},
+            HandResult{h: "99J82".to_string(), t: HandType::Three},
+            //Four
+            HandResult{h: "J33J2".to_string(), t: HandType::Four},
+            HandResult{h: "JJKJ2".to_string(), t: HandType::Four},
+            HandResult{h: "J3222".to_string(), t: HandType::Four},
+            //five
+            HandResult{h: "QQQJQ".to_string(), t: HandType::Five},
+            HandResult{h: "QQQQQ".to_string(), t: HandType::Five},
+            HandResult{h: "QJQJQ".to_string(), t: HandType::Five},
+            HandResult{h: "JJJJ2".to_string(), t: HandType::Five},
+            //full
+            HandResult{h: "32332".to_string(), t: HandType::Full},
+            HandResult{h: "33J22".to_string(), t: HandType::Full},
         ];
 
         for hand in hands.iter() {
             let ct = categorize_hand(&hand.h);
-            assert_eq!(ct, hand.t);
+            assert!(ct == hand.t,
+                "Could not categorize the hands correctly for {}! Wanted {:?} but got {:?}", hand.h, hand.t, ct
+                );
         }
     }
 
@@ -225,9 +226,9 @@ mod test {
         let hands = vec![
             ParseHandAnswer{s: "32T3K 765".to_string(), h: Hand{htype: HandType::One, bid: 765, hand: "32T3K".to_string()}},
             ParseHandAnswer{s: "KK677 684".to_string(), h: Hand{htype: HandType::Two, bid: 684, hand: "KK677".to_string()}},
-            ParseHandAnswer{s: "KTJJT 28".to_string(), h: Hand{htype: HandType::Two, bid: 28, hand: "KTJJT".to_string()}},
-            ParseHandAnswer{s: "T55J5 220".to_string(), h: Hand{htype: HandType::Three, bid: 220, hand: "T55J5".to_string()}},
-            ParseHandAnswer{s: "QQQJA 483".to_string(), h: Hand{htype: HandType::Three, bid: 483, hand: "QQQJA".to_string()}},
+            ParseHandAnswer{s: "KTJJT 28".to_string(), h: Hand{htype: HandType::Four, bid: 28, hand: "KTJJT".to_string()}},
+            ParseHandAnswer{s: "T55J5 220".to_string(), h: Hand{htype: HandType::Four, bid: 220, hand: "T55J5".to_string()}},
+            ParseHandAnswer{s: "QQQJA 483".to_string(), h: Hand{htype: HandType::Four, bid: 483, hand: "QQQJA".to_string()}},
         ];
 
         for hand in hands.iter() {
@@ -241,18 +242,18 @@ mod test {
     #[test]
     fn test_sorting_hand() {
         let mut hands = vec![
-            Hand{htype: HandType::Three, bid: 220, hand: "T55J5".to_string()},
+            Hand{htype: HandType::Four, bid: 220, hand: "T55J5".to_string()},
             Hand{htype: HandType::Two, bid: 684, hand: "KK677".to_string()},
             Hand{htype: HandType::One, bid: 765, hand: "32T3K".to_string()},
-            Hand{htype: HandType::Two, bid: 28, hand: "KTJJT".to_string()},
-            Hand{htype: HandType::Three, bid: 483, hand: "QQQJA".to_string()},
+            Hand{htype: HandType::Four, bid: 28, hand: "KTJJT".to_string()},
+            Hand{htype: HandType::Four, bid: 483, hand: "QQQJA".to_string()},
         ];
         let solution = vec![
             "32T3K".to_string(),
-            "KTJJT".to_string(),
             "KK677".to_string(),
             "T55J5".to_string(),
             "QQQJA".to_string(),
+            "KTJJT".to_string(),
         ];
 
         sort(&mut hands);
@@ -262,15 +263,15 @@ mod test {
     }
 
     #[test]
-    fn test_p1() {
+    fn test_p2() {
         let input=r#"32T3K 765
 T55J5 684
 KK677 28
 KTJJT 220
 QQQJA 483"#.lines().collect();
         let data = convert_vec_str_to_vec_string(input);
-        let n = p1(&data);
-        assert_eq!(n, 6440);
+        let n = p2(&data);
+        assert_eq!(n, 5905);
     }
 
     fn convert_vec_str_to_vec_string(vec_str: Vec<&str>) -> Vec<String> {
